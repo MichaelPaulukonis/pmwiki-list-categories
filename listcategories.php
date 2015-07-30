@@ -2,23 +2,23 @@
 /*
  * ListCategories - create a list of categories
  * (c) 2006 Stefan Schimanski <sts@1stein.org>
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-$RecipeInfo['ListCategories']['Version'] = '$Rev: 51 $';
+$RecipeInfo['ListCategories']['Version'] = '2015.07.29';
 
 SDV($ListCategories_CreatePages, true); // automatically create Category.Bla pages?
 SDV($ListCategories_IncludeCategories, "/.*/");
@@ -36,17 +36,18 @@ $ListCategories_MarkupFunctions["include"] = ListCategories_IncludeList;
 $ListCategories_MarkupFunctions["pagelist"] = ListCategories_Pagelink;
 
 // Example: (:listcategories simple (Main|Pics|Blog)\..*:)
-Markup('(:listcategories format where:)','directives',"/\\(:listcategories\\s+([A-Za-z0-9]+)\\s+([^:]*):\\)/e","ListCategories('$1','$2')");
+Markup('(:listcategories format where:)','directives',"/\\(:listcategories\\s+([A-Za-z0-9]+)\\s+([^:]*):\\)/e","ListCategories('$1','$2')");Markup_e('(:listcategories format where:)','directives',"/\\(:listcategories\\s+([A-Za-z0-9]+)\\s+([^:]*):\\)/","ListCategories(\$m[1],\$m[2])");
 
 
 /*********************************************************************/
 
 function ListCategories_IncludeList( $categories ) {
+	global $CategoryGroup;
   $out = "";
   foreach( $categories as $pn => $count ) {
-    $out .= "(:include Category.$pn:)\n";
+    $out .= "(:include $CategoryGroup.$pn:)\n";
   }
-  return PRR($out);  
+  return PRR($out);
 }
 
 SDV($LinkCategoryFmt,"<a class='categorylink' rel='tag' href='\$LinkUrl'>\$LinkText</a>");
@@ -66,10 +67,10 @@ function ListCategories_SimpleList( $categories ) {
 }
 
 function ListCategories_Pagelink( $categories ) {
-  global $pagename;
+  global $pagename, $CategoryGroup;
   $pages = array();
   foreach( $categories as $pn => $count ) {
-    $opt = array( "link"=>"Category.$pn", "count"=>"5", "order"=>"-ctime" );
+    $opt = array( "link"=>"$CategoryGroup.$pn", "count"=>"5", "order"=>"-ctime" );
     $matches = array_values(MakePageList( $pagename, $opt, 0 ));
     $pages = array_merge( array_intersect($pages, $matches),
 			  array_diff($pages, $matches),
@@ -92,7 +93,7 @@ function ListCategories_Pagelink( $categories ) {
 
 function ListCategories_SizedList( $categories ) {
     global $ListCategories_SizedlistNum, $ListCategories_SizedlistRandom,
-        $ListCategories_SizedlistMinFontSize, $ListCategories_SizedlistMaxFontSize;
+        $ListCategories_SizedlistMinFontSize, $ListCategories_SizedlistMaxFontSize, $CategoryGroup;
   $all = count( $categories );
   $sum = 0;
   $num = 0;
@@ -100,7 +101,7 @@ function ListCategories_SizedList( $categories ) {
   foreach( $categories as $pn => $count ) {
     $showThisOne = true;
     if( $ListCategories_SizedlistRandom && rand(0, $all)>$ListCategories_SizedlistNum ) $showThisOne = false;
-    
+
     if( $showThisOne ) {
       $sum += $count;
       $num++;
@@ -108,7 +109,7 @@ function ListCategories_SizedList( $categories ) {
     }
 
     if( !$ListCategories_SizedlistRandom && $num>$ListCategories_SizedlistNum ) break;
-  } 
+  }
 
   // sort them
   global $ListCategories_SortSizedList;
@@ -124,7 +125,7 @@ function ListCategories_SizedList( $categories ) {
     $value = $count/($sum/$num);
     if( $value>3 ) $value=3;
 #    $out=$out."$space<span style=\"font-size:".intval($value*$mult+$min)."px;font-weight:".intval($value*200+500)."\">[[Category.$pn|$pn]]</span>";
-    $out=$out."$space<span style=\"font-size:".intval($value*$mult+$min)."px;\">[[Category.$pn|$pn]]</span>";
+    $out=$out."$space<span style=\"font-size:".intval($value*$mult+$min)."px;\">[[$CategoryGroup.$pn|$pn]]</span>";
     $space = " ";
   }
   return PRR($out);
@@ -133,7 +134,8 @@ function ListCategories_SizedList( $categories ) {
 function GetCategoriesCountList( $where ) {
   // get Category links (copied from pagelists.php PageIndexGrep)
   global $PageIndexFile, $ListCategories_CreatePages,
-    $ListCategories_IncludeCategories, $ListCategories_ExcludeCategories;
+      $ListCategories_IncludeCategories, $ListCategories_ExcludeCategories,
+    $CategoryGroup;
   if (!$PageIndexFile) return array();
   StopWatch('ListCategories begin');
   $pagelist = array();
@@ -149,7 +151,7 @@ function GetCategoriesCountList( $where ) {
       // look for Category links
       $matches = array();
       if( preg_match("/^$where:/", $line ) ) {
-	$count = preg_match_all( "/Category\\.([^: ]+) /", $line, $matches );	
+	$count = preg_match_all( "/$CategoryGroup\\.([^: ]+) /", $line, $matches );
 	global $StopWatch;
 #	$StopWatch[] = "$count in $line<br/>";
 	foreach($matches[1] as $cat) {
@@ -161,12 +163,12 @@ function GetCategoriesCountList( $where ) {
 	      $pagelist[$cat]++;
 	    else
 	      $pagelist[$cat]=1;
-	    
+
 	    // create category page
-	    if( $ListCategories_CreatePages && !PageExists("Category.$cat") ) {
+	    if( $ListCategories_CreatePages && !PageExists("$CategoryGroup.$cat") ) {
 	      $page = ReadPage("Site.ListCategoriesDefaultPage");
 	      if( $page ) $page = array("text"=>"(:keywords $cat:)\n","keywords"=>"$cat");
-	      WritePage("Category.$cat",$page);
+	      WritePage("$CategoryGroup.$cat",$page);
 	    }
 	  }
 	}
@@ -198,6 +200,6 @@ function ListCategoriesIndex( $pagename, $auth = 'read' ) {
 #  print_r( $pagelist );
   register_shutdown_function('flush');
   register_shutdown_function('PageIndexUpdate', $pagelist, getcwd());
-  
+
   return HandleBrowse( $pagename, $auth );
 }
