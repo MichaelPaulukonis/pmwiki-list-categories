@@ -1,9 +1,5 @@
 /*
-  jakefile.js for pmwiki-bootstrap-skin
-
-  TODO: project-path should come from an external config file
-  only default path-values should be committed to repo
-  TODO: alternate paths should be available, so changes can be pushed to test installs
+  jakefile.js for pmwiki-list-categories
 
   */
 
@@ -20,7 +16,7 @@ task('dump', [], function() {
     console.log(config);
 });
 
-desc('Push the project (no ignore) to the config location passed in..');
+desc('Push the project (no ignore) to the config location passed in.\nUsage: jake push[test|main]');
 task('push', [], function (location) {
 
     if (! config.target.hasOwnProperty(location)) {
@@ -50,7 +46,7 @@ var push = function(target) {
 
 
 desc('Open remote repo in browser');
-task('openweb', [], function() {
+task('openrepo', [], function() {
     open(config.remote);
 });
 
@@ -59,23 +55,24 @@ task('openweb', [], function() {
 desc('Zip up the project.');
 task('zip', [], function() {
 
-    var name = 'bootstrap-skin';
+    var name = 'pmwiki-list-categories';
 
+    // TODO: mmmmmaybe we should use dates?
     var version = pkgjson.version;
 
-    var AdmZip = require('adm-zip'),
-        path = require('path');
+    // NOTE: 0.4.4 is last known "working" version on windows
+    // as of 2015.07.30
+    var AdmZip = require('adm-zip');
     var zip = new AdmZip();
 
 
     var addFile = function(file) {
 
-        var dir = path.dirname(file);
-        if (dir === '.') { dir = ''; } // addLocalFile doesn't resolve '.'
+        var path = file.substring(0, file.lastIndexOf('/') + 1);
 
-        console.log('addLocalFile(' + file + ', ' + dir + ');');
+        // console.log('path: ' + path + ' file: ' + file);
 
-        zip.addLocalFile(file, dir);
+        zip.addLocalFile(file, path);
 
     };
 
@@ -83,19 +80,6 @@ task('zip', [], function() {
 
     zip.writeZip(name + '.' + version + '.zip');
 
-
-    // isn't working. not sure what I'm doing wrong
-    // var t = new jake.PackageTask(name, version, function() {
-
-    //     // this.packageFiles.items = getProjectFiles();
-    //     var files = [ 'd:/temp/WebText/001.html', 'd:/temp/WebText/002.html'];
-    //     this.packageFiles.items = files;
-
-    //     console.log(this.packageFiles.items);
-
-    //     this.needZip = true;
-
-    // });
 
 });
 
@@ -107,16 +91,8 @@ var getProjectFiles = function() {
     list.exclude(/.*bak.*/);
 
     list.include('*.php');
-    list.include('bootstrap-fluid.tmpl');
-    list.include('wikilib.d/*.*');
-    list.include('images/*.*');
-    list.include('javascripts/*.*');
-    list.include('css/screen.css');
-    list.include('css/bootstrap.css');
-    list.include('css/bootstrap-responsive.css');
-    list.include('css/flat-ui.css');
-    list.include('css/darkstrap.css');
-    list.include('css/pmwiki.css');
+
+    // console.log(list);
 
     return list;
 };

@@ -1,0 +1,14 @@
+{
+  "name": "pmwiki-list-categories",
+  "description": "a PmWiki recipe for a variable-sized tag cloud",
+  "author": "MichaelPaulukonis (http://michaelpaulukonis.com)",
+  "dependencies": {
+    "adm-zip": "0.4.4",
+    "open": "latest",
+    "releasetools": "0.4.1"
+  },
+  "engine": {
+    "node": "0.12.x"
+  },
+  "version": "1.2.0"
+}
